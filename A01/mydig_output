@@ -8,5 +8,33 @@ cs.stonybrook.edu.     IN      A
 ANSWER SECTION:
 cs.stonybrook.edu. 900  IN      A  130.245.27.3
 
-Query time:  37.346000000979984 msec
+Query time:  37 msec
 WHEN:  11/02/2022 18:29:50
+
+
+INPUT:
+python3 mydig.py google.co.jp
+
+OUTPUT:
+QUESTION SECTION:
+google.co.jp.     IN      A
+
+ANSWER SECTION:
+google.co.jp. 300  IN      A  142.251.40.195
+
+Query time:  249 msec
+WHEN:  16/02/2022 21:16:14
+
+
+INPUT:
+python3 mydig.py www.cnn.com
+
+OUTPUT:
+QUESTION SECTION:
+www.cnn.com.     IN      A
+
+ANSWER SECTION:
+www.cnn.com. 30  IN      A  151.101.209.67
+
+Query time:  68 msec
+WHEN:  16/02/2022 21:17:47

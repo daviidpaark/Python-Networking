@@ -81,5 +81,5 @@ print("ANSWER SECTION:")
 for x in answer:
     print(domain, answer.ttl, " IN      A ", x)
 print()
-print("Query time: ", (end - start) * 1000, "msec")
+print("Query time: ", int((end - start) * 1000), "msec")
 print("WHEN: ", currentTime.strftime("%d/%m/%Y %H:%M:%S"))
