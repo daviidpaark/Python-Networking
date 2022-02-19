@@ -9,7 +9,7 @@ ANSWER SECTION:
 cs.stonybrook.edu. 900  IN      A  130.245.27.3
 
 Query time:  37 msec
-WHEN:  11/02/2022 18:29:50
+WHEN:  02/11/2022 18:29:50
 
 
 INPUT:
@@ -23,7 +23,7 @@ ANSWER SECTION:
 google.co.jp. 300  IN      A  142.251.40.195
 
 Query time:  249 msec
-WHEN:  16/02/2022 21:16:14
+WHEN:  02/16/2022 21:16:14
 
 
 INPUT:
@@ -37,4 +37,4 @@ ANSWER SECTION:
 www.cnn.com. 30  IN      A  151.101.209.67
 
 Query time:  68 msec
-WHEN:  16/02/2022 21:17:47
+WHEN:  02/16/2022 21:17:47
