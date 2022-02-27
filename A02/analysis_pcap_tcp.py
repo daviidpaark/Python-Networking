@@ -1,7 +1,15 @@
+from re import T
 import sys
 import datetime
 import dpkt
 from dpkt.utils import *
+
+flags = {
+    24 : "PUSH,ACK",
+    16 : "ACK",
+    17 : "FIN,ACK",
+
+}
 
 # Read in file from command line
 f = open(sys.argv[1], "rb")
@@ -23,6 +31,8 @@ startTime = {}
 endTime = {}
 totalTime = {}
 window = {}
+seq = {}
+retransmits = {}
 
 # For each packet in the pcap process the contents
 for timestamp, buf in pcap:
@@ -56,6 +66,8 @@ for timestamp, buf in pcap:
                 packets[tcp.sport] = 0
                 throughput[tcp.sport] = 0
                 startTime[tcp.sport] = datetime.datetime.utcfromtimestamp(timestamp)
+                seq[tcp.sport] = 0
+                retransmits[tcp.sport] = 0
             packets[tcp.sport] += 1
             throughput[tcp.sport] += len(tcp.data)
             # Store the first 2 outbound packets after the handshake
@@ -72,6 +84,10 @@ for timestamp, buf in pcap:
                         outTransactions[tcp.sport].append(tcp)
                         outTime[tcp.sport].append(str(datetime.datetime.utcfromtimestamp(timestamp)))
                         outWindow[tcp.sport].append(tcp.win)
+            if seq[tcp.sport] > tcp.seq:
+                retransmits[tcp.sport] += 1
+            seq[tcp.sport] = tcp.seq
+        
         # rcv -> snd
         if inet_to_str(ip.src) == dstIP:
             # dstPort -> sndPort
@@ -106,14 +122,15 @@ for srcPort in outFlow:
     print("PORT  :", outFlow[srcPort])
     print("Window:", window[srcPort])
     print("\nTotal Packets:", packets[srcPort])
+    print("Retransmitted packets:", retransmits[srcPort])
     print("Throughput: %d (bytes/sec)" % ((throughput[srcPort]/8)/totalTime[srcPort]))
     print("\nFlow #%d Transactions" % index)
     print(
         f"type\t\tflag\t\tseq\t\tack\t\twindow\t\ttime\n"
-        f"snd -> rev\tPUSH,ACK\t{outTransactions[srcPort][0].seq}\t{outTransactions[srcPort][0].ack}\t{outWindow[srcPort][0]}\t\t{outTime[srcPort][0]}\n"
-        f"rev -> snd\tACK\t\t{inTransactions[srcPort][0].seq}\t{inTransactions[srcPort][0].ack}\t{inWindow[srcPort][0]}\t\t{inTime[srcPort][0]}\n"
-        f"snd -> rev\tACK\t\t{outTransactions[srcPort][1].seq}\t{outTransactions[srcPort][1].ack}\t{outWindow[srcPort][1]}\t\t{outTime[srcPort][1]}\n"
-        f"rev -> snd\tACK\t\t{inTransactions[srcPort][1].seq}\t{inTransactions[srcPort][1].ack}\t{inWindow[srcPort][1]}\t\t{inTime[srcPort][1]}\n"
+        f"snd -> rev\t{flags[outTransactions[srcPort][0].flags]}\t{outTransactions[srcPort][0].seq}\t{outTransactions[srcPort][0].ack}\t{outWindow[srcPort][0]}\t\t{outTime[srcPort][0]}\n"
+        f"rev -> snd\t{flags[inTransactions[srcPort][0].flags]}\t\t{inTransactions[srcPort][0].seq}\t{inTransactions[srcPort][0].ack}\t{inWindow[srcPort][0]}\t\t{inTime[srcPort][0]}\n"
+        f"snd -> rev\t{flags[outTransactions[srcPort][1].flags]}\t\t{outTransactions[srcPort][1].seq}\t{outTransactions[srcPort][1].ack}\t{outWindow[srcPort][1]}\t\t{outTime[srcPort][1]}\n"
+        f"rev -> snd\t{flags[inTransactions[srcPort][1].flags]}\t\t{inTransactions[srcPort][1].seq}\t{inTransactions[srcPort][1].ack}\t{inWindow[srcPort][1]}\t\t{inTime[srcPort][1]}\n"
     )
 
 
