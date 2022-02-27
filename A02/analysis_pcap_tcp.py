@@ -5,10 +5,9 @@ import dpkt
 from dpkt.utils import *
 
 flags = {
-    24 : "PUSH,ACK",
-    16 : "ACK",
-    17 : "FIN,ACK",
-
+    24: "PUSH,ACK",
+    16: "ACK",
+    17: "FIN,ACK",
 }
 
 # Read in file from command line
@@ -60,6 +59,7 @@ for timestamp, buf in pcap:
         # snd -> rcv
         if inet_to_str(ip.src) == srcIP:
             # srcPort -> dstPort
+            # Initialize all dicts
             if tcp.sport not in outFlow:
                 outFlow[tcp.sport] = tcp.dport
                 window[tcp.sport] = tcp.win
@@ -68,26 +68,31 @@ for timestamp, buf in pcap:
                 startTime[tcp.sport] = datetime.datetime.utcfromtimestamp(timestamp)
                 seq[tcp.sport] = 0
                 retransmits[tcp.sport] = 0
+
             packets[tcp.sport] += 1
             throughput[tcp.sport] += len(tcp.data)
+            if seq[tcp.sport] > tcp.seq:
+                retransmits[tcp.sport] += 1
+            seq[tcp.sport] = tcp.seq
             # Store the first 2 outbound packets after the handshake
             if tcp.flags == 24 and tcp.sport not in outTransactions.keys():
                 outTransactions[tcp.sport] = []
                 outTransactions[tcp.sport].append(tcp)
                 outTime[tcp.sport] = []
-                outTime[tcp.sport].append(str(datetime.datetime.utcfromtimestamp(timestamp)))
+                outTime[tcp.sport].append(
+                    str(datetime.datetime.utcfromtimestamp(timestamp))
+                )
                 outWindow[tcp.sport] = []
                 outWindow[tcp.sport].append(tcp.win)
             elif tcp.sport in outTransactions.keys():
                 if len(outTransactions[tcp.sport]) < 2:
                     if tcp.flags == 16:
                         outTransactions[tcp.sport].append(tcp)
-                        outTime[tcp.sport].append(str(datetime.datetime.utcfromtimestamp(timestamp)))
+                        outTime[tcp.sport].append(
+                            str(datetime.datetime.utcfromtimestamp(timestamp))
+                        )
                         outWindow[tcp.sport].append(tcp.win)
-            if seq[tcp.sport] > tcp.seq:
-                retransmits[tcp.sport] += 1
-            seq[tcp.sport] = tcp.seq
-        
+
         # rcv -> snd
         if inet_to_str(ip.src) == dstIP:
             # dstPort -> sndPort
@@ -99,18 +104,25 @@ for timestamp, buf in pcap:
                 inTransactions[tcp.dport] = []
                 inTransactions[tcp.dport].append(tcp)
                 inTime[tcp.dport] = []
-                inTime[tcp.dport].append(str(datetime.datetime.utcfromtimestamp(timestamp)))
+                inTime[tcp.dport].append(
+                    str(datetime.datetime.utcfromtimestamp(timestamp))
+                )
                 inWindow[tcp.dport] = []
                 inWindow[tcp.dport].append(tcp.win)
             elif tcp.dport in inTransactions.keys():
                 if len(inTransactions[tcp.dport]) < 2:
                     if tcp.flags == 16:
                         inTransactions[tcp.dport].append(tcp)
-                        inTime[tcp.dport].append(str(datetime.datetime.utcfromtimestamp(timestamp)))
+                        inTime[tcp.dport].append(
+                            str(datetime.datetime.utcfromtimestamp(timestamp))
+                        )
                         inWindow[tcp.dport].append(tcp.win)
+                        
         if tcp.flags == 17:
             endTime[tcp.dport] = datetime.datetime.utcfromtimestamp(timestamp)
-            totalTime[tcp.dport] = (endTime[tcp.dport] - startTime[tcp.dport]).total_seconds()
+            totalTime[tcp.dport] = (
+                endTime[tcp.dport] - startTime[tcp.dport]
+            ).total_seconds()
 
 print("TOTAL FLOWS:", len(outFlow))
 index = 1
@@ -123,7 +135,9 @@ for srcPort in outFlow:
     print("Window:", window[srcPort])
     print("\nTotal Packets:", packets[srcPort])
     print("Retransmitted packets:", retransmits[srcPort])
-    print("Throughput: %d (bytes/sec)" % ((throughput[srcPort]/8)/totalTime[srcPort]))
+    print(
+        "Throughput: %d (bytes/sec)" % ((throughput[srcPort] / 8) / totalTime[srcPort])
+    )
     print("\nFlow #%d Transactions" % index)
     print(
         f"type\t\tflag\t\tseq\t\tack\t\twindow\t\ttime\n"
@@ -132,7 +146,6 @@ for srcPort in outFlow:
         f"snd -> rev\t{flags[outTransactions[srcPort][1].flags]}\t\t{outTransactions[srcPort][1].seq}\t{outTransactions[srcPort][1].ack}\t{outWindow[srcPort][1]}\t\t{outTime[srcPort][1]}\n"
         f"rev -> snd\t{flags[inTransactions[srcPort][1].flags]}\t\t{inTransactions[srcPort][1].seq}\t{inTransactions[srcPort][1].ack}\t{inWindow[srcPort][1]}\t\t{inTime[srcPort][1]}\n"
     )
-
 
     print("\n")
     index += 1
