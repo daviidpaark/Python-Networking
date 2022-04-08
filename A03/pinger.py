@@ -51,7 +51,17 @@ def receiveOnePing(mySocket, ID, timeout, destAddr):
 
         # TODO
         # Fetch the ICMP header from the IP packet
-        
+        header = recPacket[20:28]
+        header = struct.unpack("bbHHh", header)
+        if ID == header[3]:
+            delay = (timeReceived - startedSelect) * 1000
+            if delay <= rtt_min:
+                rtt_min = delay
+            elif delay >= rtt_max:
+                rtt_max = delay
+            rtt_sum+=delay
+            rtt_cnt+=1
+            return "36 bytes from %s; time=%.1fms" % (destAddr,delay)
         
         # TODO END
 
@@ -120,9 +130,12 @@ def ping(host, timeout=1):
     except KeyboardInterrupt:
         # TODO
         # calculate statistic here
-        
+        try:
+            avg = round((rtt_sum/rtt_cnt),3)
+            print("\nround-trip min/avg/max %.3f/%.3f/%.3f ms" % (rtt_min, avg, rtt_max))
+        except:
+            pass
         # TODO END
-        pass
 
 if __name__ == '__main__':
     ping(sys.argv[1])
