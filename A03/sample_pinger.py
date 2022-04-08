@@ -92,7 +92,7 @@ def doOnePing(destAddr, timeout):
 
     # TODO
     # Create Socket here
-    mySocket = socket.create_connection((destAddr, timeout))
+    mySocket =  socket.socket(socket.AF_INET, socket.SOCK_RAW, icmp)
     
     # TODO END
 
